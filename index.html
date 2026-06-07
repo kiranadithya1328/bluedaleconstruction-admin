@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard | Blue Dale Construction</title>
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <!-- CSS Styles -->
+  <link rel="stylesheet" href="admin.css">
+
+  <!-- Firebase compatibility SDK scripts (Compat version is best for vanilla JS multi-page sites) -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
+  <!-- Global Firebase Init Config -->
+  <script src="../firebase-config.js"></script>
+</head>
+<body>
+
+  <!-- 1. Secure Authentication Login Overlay -->
+  <div id="loginOverlay">
+    <div class="login-card">
+      <div style="text-align: center; margin-bottom: 20px;">
+        <img src="../logo.jpeg" alt="Logo" style="height: 50px; border-radius: 4px; object-fit: contain;" onerror="this.style.display='none'">
+      </div>
+      <h2 id="authTitle">Admin Login</h2>
+      <div id="loginErrorMessage" style="color: #ef4444; font-size: 0.85rem; text-align: center; margin-bottom: 15px; display: none;"></div>
+      
+      <form id="adminLoginForm">
+        <div class="form-group">
+          <label for="loginEmail">Username or Email</label>
+          <input type="text" id="loginEmail" placeholder="admin or admin@bluedale.com" required>
+        </div>
+        <div class="form-group">
+          <label for="loginPassword">Password</label>
+          <input type="password" id="loginPassword" placeholder="••••••••" required>
+        </div>
+        <button type="submit" class="btn">Authenticate</button>
+      </form>
+
+      <form id="adminSignupForm" style="display: none;">
+        <div class="form-group">
+          <label for="signupUsername">Username</label>
+          <input type="text" id="signupUsername" placeholder="admin" minlength="3">
+        </div>
+        <div class="form-group">
+          <label for="signupEmail">Email Address</label>
+          <input type="email" id="signupEmail" placeholder="admin@bluedale.com">
+        </div>
+        <div class="form-group">
+          <label for="signupPassword">Password</label>
+          <input type="password" id="signupPassword" placeholder="Minimum 6 characters" minlength="6">
+        </div>
+        <button type="submit" class="btn">Create Admin Account</button>
+      </form>
+
+      <p class="auth-switch">
+        <span id="authSwitchText">No admin account?</span>
+        <button type="button" id="toggleAuthMode">Create one</button>
+      </p>
+    </div>
+  </div>
+
+  <!-- 2. Main Admin Dashboard Panel -->
+  <div class="admin-container">
+    
+    <!-- Left Sidebar -->
+    <aside>
+      <div class="sidebar-brand">
+        <img src="../logo.jpeg" alt="Logo" class="brand-logo" onerror="this.style.display='none'">
+        <div class="brand-title">BLUE DALE<br><span style="font-size: 0.65rem; color: var(--accent); font-family: 'Inter', sans-serif; letter-spacing: 1.5px;">ADMIN PANEL</span></div>
+      </div>
+      
+      <ul class="sidebar-menu">
+        <li class="sidebar-item active" data-panel="overview">
+          <a href="#"><i class="fas fa-chart-line"></i> Dashboard</a>
+        </li>
+        <li class="sidebar-item" data-panel="about">
+          <a href="#"><i class="fas fa-info-circle"></i> Edit About Page</a>
+        </li>
+        <li class="sidebar-item" data-panel="services">
+          <a href="#"><i class="fas fa-concierge-bell"></i> Manage Services</a>
+        </li>
+        <li class="sidebar-item" data-panel="works">
+          <a href="#"><i class="fas fa-folder-open"></i> Works Portfolio</a>
+        </li>
+        <li class="sidebar-item" data-panel="inquiries">
+          <a href="#"><i class="fas fa-envelope-open-text"></i> User Inquiries <span id="inquiryCountBadge" style="background-color: var(--accent); color: var(--primary-dark); font-size: 0.75rem; padding: 2px 6px; border-radius: 10px; margin-left: auto; font-weight: 700; display: none;">0</span></a>
+        </li>
+      </ul>
+      
+      <div class="sidebar-footer">
+        <button id="logoutBtn" class="btn-logout">Logout</button>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main>
+      
+      <!-- Top header bar -->
+      <header>
+        <div class="header-title">
+          <h1 id="panelTitle">Overview Dashboard</h1>
+          <p id="panelSubtitle">Metrics and quick links</p>
+        </div>
+      </header>
+
+      <!-- Connection status banner -->
+      <div id="demoBanner" class="demo-banner">
+        <i class="fas fa-exclamation-triangle"></i>
+        <span><strong>Running in Demo Mode:</strong> Database is loaded locally. Paste credentials in <strong>firebase-config.js</strong> to connect your live database.</span>
+      </div>
+
+      <!-- PANEL 1: OVERVIEW -->
+      <div id="panel-overview" class="admin-panel active">
+        <div class="metrics-row">
+          <div class="metric-card">
+            <div class="metric-icon"><i class="fas fa-folder"></i></div>
+            <div class="metric-info">
+              <h3 id="mProjects">0</h3>
+              <p>Projects Done</p>
+            </div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-icon"><i class="fas fa-cogs"></i></div>
+            <div class="metric-info">
+              <h3 id="mServices">0</h3>
+              <p>Active Services</p>
+            </div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-icon"><i class="fas fa-comment-alt"></i></div>
+            <div class="metric-info">
+              <h3 id="mInquiries">0</h3>
+              <p>Client Inquiries</p>
+            </div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-icon"><i class="fas fa-clock"></i></div>
+            <div class="metric-info">
+              <h3 id="mYears">12</h3>
+              <p>Years Active</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="editor-card">
+          <h2>Welcome to your CMS Dashboard!</h2>
+          <p>This admin page allows you to fully manage the content of your construction website. Using Firestore Database, all updates made here are instantly pushed live to your visitors without editing any code.</p>
+          <p style="margin-top: 15px;"><strong>Quick Actions:</strong></p>
+          <div style="display: flex; gap: 15px; margin-top: 10px;">
+            <button class="btn btn-primary btn-add" onclick="switchPanel('about')">Update Contacts</button>
+            <button class="btn btn-primary btn-add" onclick="switchPanel('works')">Add a New Project</button>
+            <button class="btn btn-primary btn-add" onclick="switchPanel('inquiries')">View Messages</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- PANEL 2: EDIT ABOUT INFO -->
+      <div id="panel-about" class="admin-panel">
+        <form id="aboutEditorForm">
+          <div class="editor-card">
+            <h2>About Story Content</h2>
+            <div class="form-group">
+              <label for="aboutStory">Company Story Paragraph *</label>
+              <textarea id="aboutStory" rows="6" placeholder="Describe the company story..." required></textarea>
+            </div>
+            <div class="form-row-2">
+              <div class="form-group">
+                <label for="aboutExperience">Years of Experience (Numeric Value) *</label>
+                <input type="number" id="aboutExperience" placeholder="12" required>
+              </div>
+              <div class="form-group">
+                <label for="aboutProjectsCompleted">Static Projects Counter (Fallback) *</label>
+                <input type="number" id="aboutProjectsCompleted" placeholder="250" required>
+              </div>
+            </div>
+          </div>
+
+          <div class="editor-card">
+            <h2>Direct Contact Channels (Mail, Phone, Socials)</h2>
+            <div class="form-row-2">
+              <div class="form-group">
+                <label for="contactEmail">Public Email Address *</label>
+                <input type="email" id="contactEmail" placeholder="shakthiarasu@gmail.com" required>
+              </div>
+              <div class="form-group">
+                <label for="contactPhone">Public Phone Number *</label>
+                <input type="text" id="contactPhone" placeholder="+91 88380 37125" required>
+              </div>
+            </div>
+            <div class="form-row-2">
+              <div class="form-group">
+                <label for="contactWhatsapp">WhatsApp Contact (Number format e.g. 919345827074) *</label>
+                <input type="text" id="contactWhatsapp" placeholder="919345827074" required>
+              </div>
+              <div class="form-group">
+                <label for="contactInstagram">Instagram Handle Name *</label>
+                <input type="text" id="contactInstagram" placeholder="https://www.instagram.com/bluedaleconstructions?igsh=bmR3aHUxeHY4am5m" required>
+              </div>
+            </div>
+          </div>
+
+          <div class="editor-card">
+            <h2>Office Location Info</h2>
+            <div class="form-group">
+              <label for="contactAddress">Physical Office Address *</label>
+              <input type="text" id="contactAddress" placeholder="Blue Dale Constructions, No-4 Telugu Bramana Street, Gandhipark, Coimbatore - 641001, Tamil Nadu, India" required>
+            </div>
+            <div class="form-group">
+              <label for="contactHours">Office Working Hours *</label>
+              <input type="text" id="contactHours" placeholder="Monday - Saturday: 9:00 AM - 6:00 PM" required>
+            </div>
+            
+            <div class="editor-actions">
+              <button type="submit" class="btn btn-save">Save About Info</button>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <!-- PANEL 3: MANAGE SERVICES -->
+      <div id="panel-services" class="admin-panel">
+        <div class="table-card">
+          <div class="table-header">
+            <h3>Offered Services List</h3>
+            <button class="btn btn-add" id="btnAddService"><i class="fas fa-plus"></i> Add Service</button>
+          </div>
+          <table id="servicesTable">
+            <thead>
+              <tr>
+                <th>Icon</th>
+                <th>Service Title</th>
+                <th>Description Summary</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Bound dynamically by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- PANEL 4: PORTFOLIO WORKS DONE -->
+      <div id="panel-works" class="admin-panel">
+        <div class="table-card">
+          <div class="table-header">
+            <h3>Completed Project Profiles</h3>
+            <button class="btn btn-add" id="btnAddWork"><i class="fas fa-plus"></i> Add Project</button>
+          </div>
+          <table id="worksTable">
+            <thead>
+              <tr>
+                <th>Photo</th>
+                <th>Site/Project Name</th>
+                <th>Year</th>
+                <th>Location</th>
+                <th>Category</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Bound dynamically by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- PANEL 5: USER INQUIRIES -->
+      <div id="panel-inquiries" class="admin-panel">
+        <div class="table-card">
+          <div class="table-header">
+            <h3>Received Project Inquiries</h3>
+            <button class="btn-logout" id="btnClearInquiries" style="width: auto; padding: 6px 15px; font-size: 0.8rem;"><i class="fas fa-trash-alt"></i> Clear Logs</button>
+          </div>
+          <table id="inquiriesTable">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Contact details</th>
+                <th>Project Type</th>
+                <th>Est. Budget</th>
+                <th>Details/Location</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Bound dynamically by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- MODAL: ADD / EDIT SERVICE -->
+  <div class="modal" id="serviceModal">
+    <div class="modal-content">
+      <h3 id="serviceModalTitle">Add New Service</h3>
+      <form id="serviceForm">
+        <input type="hidden" id="serviceEditId">
+        <div class="form-group">
+          <label for="serviceTitle">Service Name *</label>
+          <input type="text" id="serviceTitle" placeholder="e.g. Residential Build" required>
+        </div>
+        <div class="form-group">
+          <label for="serviceIcon">FontAwesome Icon Class Name *</label>
+          <input type="text" id="serviceIcon" placeholder="e.g. fa-home" required>
+        </div>
+        <div class="form-group">
+          <label for="serviceDesc">Description Summary *</label>
+          <textarea id="serviceDesc" rows="3" placeholder="Provide a brief explanation of the service..." required></textarea>
+        </div>
+        <div class="form-group">
+          <label for="serviceFeatures">Key Features (One feature per line) *</label>
+          <textarea id="serviceFeatures" rows="4" placeholder="e.g. Custom Luxury Villas&#10;Smart Residences&#10;Apartment Blocks" required></textarea>
+        </div>
+        <div class="editor-actions">
+          <button type="button" class="btn-cancel" onclick="closeModal('serviceModal')">Cancel</button>
+          <button type="submit" class="btn btn-save">Save Service</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD / EDIT WORK -->
+  <div class="modal" id="workModal">
+    <div class="modal-content">
+      <h3 id="workModalTitle">Add Project Work Profile</h3>
+      <form id="workForm">
+        <input type="hidden" id="workEditId">
+        <div class="form-group">
+          <label for="workName">Site/Project Name *</label>
+          <input type="text" id="workName" placeholder="e.g. The Horizon Villa" required>
+        </div>
+        <div class="form-row-2">
+          <div class="form-group">
+            <label for="workYear">Year Completed *</label>
+            <input type="number" id="workYear" placeholder="e.g. 2024" required>
+          </div>
+          <div class="form-group">
+            <label for="workCategory">Category *</label>
+            <select id="workCategory" required>
+              <option value="residential">Residential</option>
+              <option value="commercial">Commercial</option>
+              <option value="renovations">Renovations</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="workLocation">Site Location *</label>
+          <input type="text" id="workLocation" placeholder="e.g. Green Valley Suburbs" required>
+        </div>
+        <div class="form-group">
+          <label for="workDesc">Brief Construction Details *</label>
+          <textarea id="workDesc" rows="3" placeholder="Describe the size, materials used, or details..." required></textarea>
+        </div>
+        
+        <div class="form-group">
+          <label>Project Image</label>
+          <input type="url" id="workImageUrl" placeholder="Paste image URL, or use ../work_villa.png">
+          <p style="margin: -10px 0 12px 0; color: #64748b; font-size: 0.8rem;">Leave empty to use the default image: ../work_villa.png</p>
+          <!-- Styled Upload Drop Zone -->
+          <div class="upload-zone" id="uploadZone" style="display:none;">
+            <i class="fas fa-cloud-upload-alt upload-icon"></i>
+            <p class="upload-text">Click to choose a photo from your device</p>
+            <p class="upload-hint">Supports JPG, PNG, WEBP &bull; Max 10MB</p>
+            <input type="file" id="workImageFile" accept="image/*" style="display:none;">
+          </div>
+          <!-- Image Preview -->
+          <div id="imagePreviewWrapper" style="display:none; margin-top: 12px;">
+            <img id="imagePreview" src="" alt="Selected image preview" style="width: 100%; max-height: 200px; object-fit: cover; border-radius: 8px; border: 2px solid var(--accent);">
+            <button type="button" id="btnRemoveImage" onclick="removeSelectedImage()" style="margin-top: 8px; background: none; border: 1px solid #ef4444; color: #ef4444; padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;"><i class="fas fa-times"></i> Remove Image</button>
+          </div>
+        </div>
+        
+        <div class="editor-actions">
+          <button type="button" class="btn-cancel" onclick="closeModal('workModal')">Cancel</button>
+          <button type="submit" class="btn btn-save" id="btnSaveWork">Save Project</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Notification Toast -->
+  <div id="toast" class="toast">
+    <i class="fas fa-info-circle"></i>
+    <span id="toastMessage">Change saved successfully!</span>
+  </div>
+
+  <!-- Admin Page Database Script -->
+  <script src="admin.js"></script>
+</body>
+</html>
