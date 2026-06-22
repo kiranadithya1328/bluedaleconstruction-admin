@@ -216,13 +216,7 @@ function setupAuthListeners() {
       }
 
       try {
-        const setupRef = window.db.collection('settings').doc('adminSetup');
-        const setupDoc = await setupRef.get();
-        if (setupDoc.exists) {
-          showAuthError('Admin setup is already complete. Please login with an existing account.');
-          return;
-        }
-
+       
         const usernameRef = window.db.collection('usernames').doc(username);
         const usernameDoc = await usernameRef.get();
         if (usernameDoc.exists) {
@@ -248,11 +242,7 @@ function setupAuthListeners() {
           email,
           createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
-        batch.set(setupRef, {
-          firstAdminUid: cred.user.uid,
-          firstAdminUsername: username,
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
+     
         await batch.commit();
 
         loginOverlay.style.display = 'none';
